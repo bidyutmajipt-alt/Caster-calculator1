@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CastCalc - Continuous Caster Calculator</title>
+<meta name="description" content="Free continuous caster calculator: casting speed, metallurgical length, throughput and production rate for billet and bloom casters.">
+<style>
+:root{
+  --bg:#f4f6fb; --ink:#0f172a; --mut:#64748b; --card:#ffffff; --line:#e2e8f0;
+  --navy:#0b1220; --navy2:#16233f; --o1:#ff6a1a; --o2:#ffb21a;
+  --ok:#16a34a; --okbg:#dcfce7; --bad:#dc2626; --badbg:#fee2e2; --blue:#2563eb; --soft:#eef2ff;
+  --r:14px; --shadow:0 6px 24px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;font-family:"Segoe UI",Inter,system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;font-size:15px}
+a{color:var(--blue)} h1,h2,h3{line-height:1.2;margin:0}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:50;background:rgba(11,18,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.08)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px}
+.brand{font-weight:800;color:#fff;font-size:18px;letter-spacing:.3px;text-decoration:none;white-space:nowrap}
+.brand b{background:linear-gradient(90deg,var(--o1),var(--o2));-webkit-background-clip:text;background-clip:text;color:transparent}
+nav ul{display:flex;gap:4px;list-style:none;margin:0;padding:0;overflow-x:auto}
+nav li a{display:block;color:#cbd5e1;text-decoration:none;padding:7px 11px;border-radius:8px;font-size:13.5px;white-space:nowrap}
+nav li a:hover{background:rgba(255,255,255,.1);color:#fff}
+
+/* HERO */
+.hero{position:relative;overflow:hidden;color:#fff;background:linear-gradient(135deg,#0b1220 0%,#16233f 55%,#3b1a0a 120%)}
+.hero:before,.hero:after{content:"";position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;animation:pulse 7s ease-in-out infinite}
+.hero:before{width:420px;height:420px;background:var(--o1);right:-80px;top:-120px}
+.hero:after{width:300px;height:300px;background:#2563eb;left:-90px;bottom:-140px;animation-delay:2s;opacity:.35}
+@keyframes pulse{50%{transform:scale(1.15);opacity:.35}}
+.hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center;padding-top:56px;padding-bottom:56px}
+.tag{display:inline-block;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--o2);border:1px solid rgba(255,178,26,.4);padding:4px 12px;border-radius:99px;margin-bottom:14px}
+.hero h1{font-size:44px;font-weight:800;letter-spacing:-.5px}
+.hero h1 span{background:linear-gradient(90deg,var(--o1),var(--o2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{color:#cbd5e1;font-size:17px;max-width:560px;margin:14px 0 22px}
+.btn{display:inline-block;border:0;cursor:pointer;font:inherit;font-weight:600;padding:11px 20px;border-radius:10px;text-decoration:none;transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translateY(-1px)}
+.btn.pri{background:linear-gradient(90deg,var(--o1),var(--o2));color:#1a0d00;box-shadow:0 6px 20px rgba(255,106,26,.35)}
+.btn.ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25)}
+.btn.sec{background:#e8ecf5;color:var(--ink)} .btn.dark{background:var(--navy);color:#fff}
+.chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:10px 16px;min-width:130px}
+.chip b{display:block;font-size:22px} .chip span{font-size:12px;color:#94a3b8}
+.pill{display:inline-block;padding:2px 12px;border-radius:99px;font-weight:700;font-size:13px}
+.pill.ok{background:var(--okbg);color:#166534} .pill.bad{background:var(--badbg);color:#991b1b} .pill.na{background:#334155;color:#cbd5e1}
+.hero svg{width:100%;height:auto;filter:drop-shadow(0 10px 30px rgba(0,0,0,.4))}
+
+/* SECTIONS */
+section.blk{padding:54px 0 10px}
+.head{margin-bottom:22px} .head h2{font-size:28px;font-weight:800;letter-spacing:-.3px}
+.head p{color:var(--mut);margin:6px 0 0;max-width:720px}
+.num{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--o1),var(--o2));color:#1a0d00;font-weight:800;font-size:15px;margin-right:10px;vertical-align:middle}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+.card h3{font-size:16px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.fields{display:grid;gap:11px}
+label.f{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px;font-weight:600}
+label.f i{font-style:normal;font-weight:400;color:#94a3b8;font-size:11px}
+input,select{font:inherit;color:var(--ink);padding:7px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;width:100%}
+input:focus,select:focus{outline:2px solid #fdba74;border-color:var(--o1)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center;font-size:13.5px}
+th{background:var(--soft);color:#334155;font-size:12px;position:sticky;top:0}
+td.l,th.l{text-align:left} td input,td select{min-width:80px;padding:6px 7px}
+tr.key td{background:#fff7ed;font-weight:700}
+td.bad{background:var(--badbg);color:#991b1b;font-weight:700} td.ok{background:var(--okbg);color:#166534;font-weight:700}
+.xbtn{border:0;background:#fee2e2;color:#b91c1c;border-radius:8px;width:30px;height:30px;cursor:pointer;font-weight:700}
+.hint{font-size:12.5px;color:var(--mut);margin:8px 0 0}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
+.alert{border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:14px}
+.alert.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e} .alert.err{background:var(--badbg);border:1px solid #fecaca;color:#991b1b}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);border-top:4px solid var(--o1)}
+.kpi b{display:block;font-size:24px;letter-spacing:-.5px} .kpi span{font-size:12px;color:var(--mut)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.chartbox svg{width:100%;height:auto} .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#475569;margin-top:6px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* HOW */
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow)}
+.step h3{font-size:15px;margin-bottom:6px} .step p{margin:4px 0;color:#475569;font-size:13.5px}
+code,.fx{font-family:Consolas,"SFMono-Regular",Menlo,monospace;background:#f1f5f9;border-radius:6px;padding:2px 6px;font-size:12.5px;color:#0f172a}
+pre{background:#0b1220;color:#e2e8f0;border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.5}
+.sel{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px} .sel label{min-width:200px}
+
+/* GUIDE */
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;box-shadow:var(--shadow)}
+summary{cursor:pointer;padding:14px 18px;font-weight:700;list-style:none} summary::-webkit-details-marker{display:none}
+summary:after{content:"+";float:right;color:var(--o1);font-size:20px;line-height:1} details[open] summary:after{content:"\2212"}
+details .in{padding:0 20px 16px;color:#334155} details ol,details ul{padding-left:20px;margin:6px 0} details li{margin:5px 0}
+.hosts{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.host{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);position:relative}
+.host h3{font-size:17px} .host .badge{position:absolute;top:14px;right:14px;background:var(--okbg);color:#166534;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px}
+.host ol{padding-left:20px;margin:10px 0 0;font-size:14px} .host li{margin:6px 0}
+.host .meta{font-size:12.5px;color:var(--mut);margin:4px 0 0}
+footer{margin-top:50px;background:var(--navy);color:#94a3b8;padding:28px 0;font-size:13px}
+footer b{color:#fff}
+@media(max-width:900px){.hero .wrap{grid-template-columns:1fr}.hero h1{font-size:34px}.grid3,.charts,.hosts{grid-template-columns:1fr}.hero svg{max-width:420px}}
+@media print{nav,.hero,#how,#worked,#guide,#launch,#faq,.bar,.xbtn,footer{display:none!important}body{background:#fff}.card,.kpi{box-shadow:none}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="brand" href="#top">Cast<b>Calc</b></a>
+  <ul>
+    <li><a href="#calculator">Calculator</a></li><li><a href="#results">Results</a></li>
+    <li><a href="#how">How it works</a></li><li><a href="#worked">Worked example</a></li>
+    <li><a href="#guide">Run guide</a></li><li><a href="#launch">Launch free</a></li><li><a href="#faq">FAQ</a></li>
+  </ul>
+</div></nav>
+
+<header class="hero" id="top"><div class="wrap">
+  <div>
+    <span class="tag">Billet &amp; bloom casters</span>
+    <h1>Casting speed &amp; <span>metallurgical length</span> in seconds</h1>
+    <p class="lead">Enter section sizes, annual production, heat size, grade mix, tap-to-tap time and cutting length. Get design casting speed, crater-end length, throughput and a clear OK / REVIEW verdict, all in your browser.</p>
+    <a class="btn pri" href="#calculator">Open calculator</a>
+    <a class="btn ghost" href="#launch">Launch this site free</a>
+    <div class="chips">
+      <div class="chip"><b id="hs_speed">-</b><span>Avg design speed (m/min)</span></div>
+      <div class="chip"><b id="hs_lm">-</b><span>Worst metallurgical length (m)</span></div>
+      <div class="chip"><b id="hs_status"><span class="pill na">-</span></b><span>Overall check</span></div>
+    </div>
+  </div>
+  <div>
+    <svg viewBox="0 0 380 330" role="img" aria-label="Continuous caster schematic">
+      <defs>
+        <linearGradient id="strand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6a1a"/><stop offset=".55" stop-color="#ffb21a"/><stop offset=".62" stop-color="#94a3b8"/><stop offset="1" stop-color="#64748b"/></linearGradient>
+      </defs>
+      <path d="M70 18 h70 l-10 38 h-50 z" fill="#334155" stroke="#94a3b8"/><text x="105" y="42" fill="#e2e8f0" font-size="12" text-anchor="middle">Ladle</text>
+      <path d="M92 56 v22" stroke="#ff6a1a" stroke-width="5"/>
+      <path d="M62 78 h86 l-8 26 h-70 z" fill="#475569" stroke="#94a3b8"/><text x="105" y="96" fill="#e2e8f0" font-size="11" text-anchor="middle">Tundish</text>
+      <path d="M105 104 v14" stroke="#ff6a1a" stroke-width="5"/>
+      <rect x="88" y="118" width="34" height="42" rx="3" fill="#1e293b" stroke="#ffb21a" stroke-width="2"/><text x="132" y="142" fill="#e2e8f0" font-size="11">Mould</text>
+      <path d="M105 160 C105 230 130 285 240 300" fill="none" stroke="url(#strand)" stroke-width="22" stroke-linecap="butt"/>
+      <path d="M105 160 C105 230 130 285 240 300" fill="none" stroke="#0b1220" stroke-opacity=".25" stroke-width="22" stroke-dasharray="2 8"/>
+      <circle cx="123" cy="248" r="5" fill="#fff"/><path d="M130 248 L190 214" stroke="#fff" stroke-dasharray="3 3"/>
+      <text x="192" y="212" fill="#fff" font-size="12" font-weight="700">Crater end</text><text x="192" y="227" fill="#cbd5e1" font-size="11">(full solidification)</text>
+      <text x="84" y="238" fill="#ffb21a" font-size="11" transform="rotate(-90 84 238)">Liquid core</text>
+      <path d="M244 280 l26 40" stroke="#ef4444" stroke-width="3"/><text x="278" y="298" fill="#fca5a5" font-size="11">Torch cut</text>
+    </svg>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<!-- CALCULATOR -->
+<section class="blk" id="calculator">
+  <div class="head"><h2><span class="num">1</span>Calculator</h2>
+  <p>Example data is pre-loaded. Edit any field and results update automatically. Inputs are saved in your own browser only.</p></div>
+  <div class="grid3" id="plantCards"></div>
+
+  <div class="card"><h3>Section sizes, cutting length &amp; production split</h3>
+    <div class="tw"><table id="secTable"></table></div>
+    <div class="bar"><button class="btn sec" onclick="addSection()">+ Add section</button></div>
+    <p class="hint">Thickness is used only for Rectangular sections. Max speed is the machine/section limit (breakout, mould, cooling). Shares must total 100%. Section total: <b id="secTotal">-</b></p>
+  </div>
+
+  <div class="card"><h3>Casting grades &amp; production split</h3>
+    <div class="tw"><table id="grTable"></table></div>
+    <div class="bar"><button class="btn sec" onclick="addGrade()">+ Add grade</button></div>
+    <p class="hint">K = shell constant in mm/min<sup>0.5</sup> (typically 20-30, use plant-calibrated value). Speed factor lowers the max speed for crack-sensitive grades. Grade total: <b id="grTotal">-</b></p>
+  </div>
+  <div class="bar">
+    <button class="btn dark" onclick="run(true)">Calculate</button>
+    <button class="btn sec" onclick="resetExample()">Reset to example</button>
+    <button class="btn sec" onclick="downloadCSV()">Download CSV</button>
+    <button class="btn sec" onclick="window.print()">Print results</button>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="blk" id="results">
+  <div class="head"><h2><span class="num">2</span>Results</h2><p>Everything below is calculated from your inputs, using the formulas explained in the next section.</p></div>
+  <div id="msgs"></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="card"><h3>Section results</h3><div class="tw" id="secResults"></div></div>
+  <div class="charts">
+    <div class="card chartbox"><h3>Casting speed by section (m/min)</h3><div id="chart1"></div></div>
+    <div class="card chartbox"><h3>Metallurgical length by grade (m)</h3><div id="chart2"></div></div>
+  </div>
+  <div class="card"><h3>Grade x section matrix at design speed</h3><div class="tw" id="matrix"></div>
+  <p class="hint" id="matrixHint"></p></div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="blk" id="how">
+  <div class="head"><h2><span class="num">3</span>How the calculation works</h2>
+  <p>Three blocks: the plant cycle (same for all sections), the section calculations, and the metallurgical-length check per grade.</p></div>
+  <div class="steps">
+    <div class="step"><h3>A. Plant cycle</h3>
+      <p>Cast steel per heat = <span class="fx">heat size x yield</span></p>
+      <p>Liquid steel/yr = <span class="fx">annual production / yield</span></p>
+      <p>Heats/yr = <span class="fx">liquid steel / heat size</span></p>
+      <p>Operating min/yr = <span class="fx">days x 1440 x availability</span></p>
+      <p>Heats possible = <span class="fx">operating min / tap-to-tap</span></p>
+      <p>Utilisation = <span class="fx">heats needed / heats possible</span> (above 100% = target impossible)</p></div>
+    <div class="step"><h3>B. Casting time allowed</h3>
+      <p>Sequences/yr = <span class="fx">heats / heats per sequence</span></p>
+      <p>Time per sequence = <span class="fx">operating min / sequences</span></p>
+      <p>Casting time per heat = <span class="fx">(time per sequence - changeover) / heats per sequence</span></p>
+      <p>This is the longest a heat may take on the caster while still meeting the annual target.</p></div>
+    <div class="step"><h3>C. Section geometry</h3>
+      <p>Area = <span class="fx">width x thickness</span> (round: <span class="fx">pi/4 x d^2</span>)</p>
+      <p>Weight per metre = <span class="fx">area / 10^6 x density</span></p>
+      <p>Cut piece weight = <span class="fx">kg/m x cutting length</span></p>
+      <p>D = smaller side (or diameter), used for solidification.</p></div>
+    <div class="step"><h3>D. Casting speed</h3>
+      <p>Speed A (tap-to-tap) = <span class="fx">cast weight x 1000 / (strands x tap-to-tap x kg/m)</span></p>
+      <p>Speed B (annual target) = same formula with the casting time from step B</p>
+      <p><b>Design speed = higher of A and B.</b> A keeps up with the converter; B meets the yearly target including changeovers.</p></div>
+    <div class="step"><h3>E. Metallurgical length</h3>
+      <p>Shell thickness <span class="fx">d = K x sqrt(t)</span>. Fully solid when <span class="fx">d = D/2</span>.</p>
+      <p>Solidification time <span class="fx">t = (D / 2K)^2</span> min</p>
+      <p><b>Metallurgical length = design speed x t</b></p>
+      <p>Max speed from length = <span class="fx">allowable length / t</span></p></div>
+    <div class="step"><h3>F. Verdict</h3>
+      <p>Permissible speed = lower of (max speed from length) and (section max speed x grade factor).</p>
+      <p><b>OK</b> when design speed is within permissible speed for every grade and the worst crater end is within the allowable length. Otherwise <b>REVIEW</b>: lower speed, lengthen the machine allowance, review K, add a strand or cut the heat size.</p></div>
+    <div class="step"><h3>G. Throughput &amp; cutting</h3>
+      <p>Strand t/h = <span class="fx">speed x kg/m x 60 / 1000</span></p>
+      <p>Pieces/h/strand = <span class="fx">speed x 60 / cutting length</span></p>
+      <p>Cutting cycle = <span class="fx">cutting length / speed x 60</span> s</p>
+      <p>Cutting length does not change speed; it drives piece weight and shear/cut-to-length cycle time.</p></div>
+  </div>
+</section>
+
+<!-- WORKED EXAMPLE -->
+<section class="blk" id="worked">
+  <div class="head"><h2><span class="num">4</span>Live worked example</h2>
+  <p>Every step with your current numbers substituted. Pick a section and grade to follow the full calculation.</p></div>
+  <div class="card">
+    <div class="sel"><label class="f">Section<select id="wSec" onchange="renderWorked()"></select></label>
+    <label class="f">Grade<select id="wGr" onchange="renderWorked()"></select></label></div>
+    <div class="tw" id="workedOut"></div>
+  </div>
+</section>
+
+<!-- RUN GUIDE -->
+<section class="blk" id="guide">
+  <div class="head"><h2><span class="num">5</span>Run the logic yourself</h2>
+  <p>The same logic is plain JavaScript. Run it in an online compiler, in Node.js, or inside any website.</p></div>
+
+  <details open><summary>Method 1 - Online compiler (no installation)</summary><div class="in"><ol>
+    <li>Open the file <code>demo.js</code> in Notepad or any text editor, press <b>Ctrl+A</b>, then <b>Ctrl+C</b>.</li>
+    <li>Go to an online JavaScript compiler such as <b>onecompiler.com/nodejs</b>, Programiz or JDoodle. Choose <b>JavaScript / Node.js</b>.</li>
+    <li>Delete the sample code, paste with <b>Ctrl+V</b>, and click <b>Run</b>.</li>
+    <li>You will see the plant cycle, every section's design speed, metallurgical length and status.</li>
+    <li>To try your own data, edit the numbers in the <code>EXAMPLE</code> block at the top and click Run again. Percentages are fractions (97% = 0.97).</li></ol></div></details>
+
+  <details><summary>Method 2 - Node.js on your computer</summary><div class="in"><ol>
+    <li>Install the <b>LTS</b> version from <b>nodejs.org</b>.</li>
+    <li>Open Command Prompt (Windows) or Terminal (Mac) and go to your folder: <code>cd C:\caster</code></li>
+    <li>Check the install: <code>node --version</code></li>
+    <li>Run: <code>node demo.js</code></li>
+    <li>Edit <code>EXAMPLE</code> in <code>demo.js</code>, save, and run again.</li></ol></div></details>
+
+  <details><summary>Method 3 - Use the logic inside your own website</summary><div class="in">
+    <p>Put <code>caster-logic.js</code> beside your page and call <code>calculate()</code>:</p>
+<pre>&lt;script src="caster-logic.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const result = calculate({
+    plant:    { annualProduction:450000, heatSize:60, tapToTap:50, strands:4,
+                yield:0.97, operatingDays:330, availability:0.88,
+                heatsPerSequence:10, changeoverMin:45, density:7850,
+                machineLength:18, allowablePct:0.90 },
+    sections: [{ name:'130 Sq', shape:'Square', width:130, thickness:0,
+                 cutLength:12, maxSpeed:3.2, share:1 }],
+    grades:   [{ name:'Low C', share:1, K:26, speedFactor:1 }]
+  });
+  console.log(result.sections[0].vDesign);   // design casting speed, m/min
+&lt;/script&gt;</pre>
+    <p>Output fields: <code>result.plant</code>, <code>result.sections[i]</code> (with <code>gradeRows</code>), <code>result.totals</code>, <code>result.warnings</code>. The page you are on already contains this exact logic inside <code>index.html</code>.</p></div></details>
+
+  <details><summary>Troubleshooting</summary><div class="in"><ul>
+    <li><b>SyntaxError in compiler:</b> a comma or bracket was deleted. Paste the original again and change one number at a time.</li>
+    <li><b>calculate is not defined:</b> you pasted <code>caster-logic.js</code> only. Paste <code>demo.js</code>, which includes everything.</li>
+    <li><b>NaN everywhere:</b> a field is empty or not a number.</li>
+    <li><b>Warning about shares:</b> section shares and grade shares must each total 100%.</li></ul></div></details>
+</section>
+
+<!-- LAUNCH -->
+<section class="blk" id="launch">
+  <div class="head"><h2><span class="num">6</span>Launch this website for free</h2>
+  <p>This site is one file (<code>index.html</code>) with no server or database, so any free static host works. Screens and button names change occasionally, but the flow is the same.</p></div>
+  <div class="hosts">
+    <div class="host"><span class="badge">Fastest</span><h3>Netlify Drop</h3><p class="meta">Drag and drop, live in under a minute</p><ol>
+      <li>Put <code>index.html</code> in a folder, for example <code>caster-site</code>.</li>
+      <li>Open <b>app.netlify.com/drop</b>.</li>
+      <li>Drag the <b>folder</b> onto the page.</li>
+      <li>You get a link like <code>random-name.netlify.app</code>.</li>
+      <li>Create a free account and claim the site so it stays online. Unclaimed drops may expire.</li>
+      <li>To update later: drag the folder again onto the site's Deploys page.</li></ol></div>
+    <div class="host"><span class="badge">Most popular</span><h3>GitHub Pages</h3><p class="meta">Free forever for public repos</p><ol>
+      <li>Create a free account at <b>github.com</b>.</li>
+      <li>Click <b>New repository</b>, name it <code>caster-calculator</code>, set it to <b>Public</b>.</li>
+      <li>Click <b>Add file, Upload files</b>, drop <code>index.html</code>, then <b>Commit</b>.</li>
+      <li>Open <b>Settings, Pages</b>. Under Source choose <b>Deploy from a branch</b>, branch <b>main</b>, folder <b>/ (root)</b>, Save.</li>
+      <li>Wait 1-2 minutes. Your site is at <code>https://YOUR-USERNAME.github.io/caster-calculator/</code>.</li>
+      <li>To update: upload a new <code>index.html</code> with the same name.</li></ol></div>
+    <div class="host"><span class="badge">Free + fast</span><h3>Cloudflare Pages</h3><p class="meta">Global CDN, unlimited bandwidth</p><ol>
+      <li>Create a free account at <b>dash.cloudflare.com</b>.</li>
+      <li>Go to <b>Workers &amp; Pages, Create, Pages</b>.</li>
+      <li>Choose <b>Upload assets</b> (direct upload) and name the project.</li>
+      <li>Upload your folder containing <code>index.html</code> and click <b>Deploy</b>.</li>
+      <li>Your link looks like <code>project-name.pages.dev</code>.</li>
+      <li>To update: create a new deployment with the updated folder.</li></ol></div>
+  </div>
+  <div class="card" style="margin-top:18px"><h3>After launching</h3><ul style="margin:0;padding-left:20px">
+    <li><b>Test it:</b> open the link on your phone and PC, change a value, and confirm the results update.</li>
+    <li><b>Custom domain (optional):</b> all three hosts let you attach your own domain; the domain itself costs money, the hosting stays free.</li>
+    <li><b>Share:</b> the link works for anyone. Their inputs stay in their own browser and are not sent anywhere.</li>
+    <li><b>Keep a backup:</b> save <code>index.html</code> on your computer or in Drive. It is your whole website.</li></ul></div>
+</section>
+
+<!-- FAQ -->
+<section class="blk" id="faq">
+  <div class="head"><h2><span class="num">7</span>FAQ</h2></div>
+  <details><summary>Why is design casting speed the higher of two speeds?</summary><div class="in">Speed A is what the strands must run so one heat is cast in one tap-to-tap time (the caster keeps up with the converter). Speed B is what the annual target needs after sequence changeovers are subtracted. Running at the higher value satisfies both.</div></details>
+  <details><summary>What does REVIEW mean?</summary><div class="in">At least one check failed: the design speed exceeds the section's max speed, exceeds the permissible speed for a grade, or the crater end falls beyond the allowable metallurgical length. Slightly over the limit (as in the example data) is a prompt to check K values and margins, not necessarily a failure.</div></details>
+  <details><summary>What value should I use for K?</summary><div class="in">K depends on mould and secondary cooling, section size and grade. Values around 20-30 mm/min<sup>0.5</sup> are common for billet casters. The example values are placeholders; use your plant's measured or calibrated K for reliable results.</div></details>
+  <details><summary>Why does a crack-sensitive grade have a speed factor below 100%?</summary><div class="in">High-carbon, peritectic and micro-alloyed grades are cast slower to control cracks and segregation. The factor reduces that grade's permitted speed relative to the section maximum.</div></details>
+  <details><summary>Does cutting length affect casting speed?</summary><div class="in">No. It sets cut piece weight, pieces per hour and the cutting-cycle time per piece, which matters for shear or torch cycle capability.</div></details>
+  <details><summary>Is my data uploaded anywhere?</summary><div class="in">No. All calculations run in your browser. Inputs are kept only in your browser's local storage, and "Reset to example" clears them.</div></details>
+  <details><summary>How accurate is this?</summary><div class="in">It is a first-pass design and planning calculator using the standard square-root shell-growth model. Final machine design and operating practice should be validated against plant data, heat transfer modelling and the equipment supplier's limits.</div></details>
+</section>
+</main>
+
+<footer><div class="wrap"><b>CastCalc</b> - indicative design calculator for continuous casting. Built with plain HTML, CSS and JavaScript. Verify results against plant data before operational use.</div></footer>
+
+<script>
+/* ===================== CALCULATION LOGIC ===================== */
+const EXAMPLE = {
+  plant: { annualProduction:450000, heatSize:60, tapToTap:50, strands:4, yield:0.97, operatingDays:330,
+           availability:0.88, heatsPerSequence:10, changeoverMin:45, density:7850, machineLength:18, allowablePct:0.90 },
+  sections: [
+    { name:'130 Sq', shape:'Square', width:130, thickness:0, cutLength:12, maxSpeed:3.2, share:0.60 },
+    { name:'150 Sq', shape:'Square', width:150, thickness:0, cutLength:12, maxSpeed:2.8, share:0.30 },
+    { name:'200x160 Bloom', shape:'Rectangular', width:200, thickness:160, cutLength:6, maxSpeed:2.0, share:0.10 } ],
+  grades: [
+    { name:'Low C', share:0.40, K:26, speedFactor:1.0 },
+    { name:'Medium C', share:0.30, K:25, speedFactor:1.0 },
+    { name:'High C', share:0.20, K:24, speedFactor:0.9 },
+    { name:'Micro-alloyed / Peritectic', share:0.10, K:25, speedFactor:0.9 } ]
+};
+
+function calculate(input) {
+  const p = input.plant, warnings = [];
+  const sumSec = input.sections.reduce((a,s)=>a+s.share,0);
+  const sumGr  = input.grades.reduce((a,g)=>a+g.share,0);
+  if (Math.abs(sumSec-1) > 0.0001) warnings.push('Section production shares must total 100%.');
+  if (Math.abs(sumGr-1)  > 0.0001) warnings.push('Grade production shares must total 100%.');
+
+  const castWtPerHeat = p.heatSize * p.yield;
+  const liquidSteel   = p.annualProduction / p.yield;
+  const heatsPerYear  = liquidSteel / p.heatSize;
+  const opMinutes     = p.operatingDays * 1440 * p.availability;
+  const opHours       = opMinutes / 60;
+  const heatsPossible = opMinutes / p.tapToTap;
+  const t2tUtilisation= heatsPerYear / heatsPossible;
+  const sequencesYr   = heatsPerYear / p.heatsPerSequence;
+  const timePerSeq    = opMinutes / sequencesYr;
+  const tCastMax      = (timePerSeq - p.changeoverMin) / p.heatsPerSequence;
+  const allowableLm   = p.machineLength * p.allowablePct;
+  if (t2tUtilisation > 1) warnings.push('Annual target exceeds tap-to-tap capacity.');
+  if (tCastMax <= 0) warnings.push('Changeover time leaves no casting time per sequence - target not achievable.');
+
+  const plant = { castWtPerHeat, liquidSteel, heatsPerYear, heatsPerDay: heatsPerYear/p.operatingDays, opMinutes, opHours,
+    heatsPossible, t2tUtilisation, sequencesYr, timePerSeq, tCastMax, allowableLm, avgProdRate: p.annualProduction/opHours };
+
+  const sections = input.sections.map(s => {
+    const thick = (s.shape === 'Rectangular') ? s.thickness : s.width;
+    const area  = (s.shape === 'Round') ? Math.PI/4*s.width*s.width : s.width*thick;
+    const kgPerM = area/1e6*p.density, cutWeight = kgPerM*s.cutLength, D = Math.min(s.width, thick);
+    const vT2T  = castWtPerHeat*1000/(p.strands*p.tapToTap*kgPerM);
+    const vProd = castWtPerHeat*1000/(p.strands*Math.max(tCastMax,0.1)*kgPerM);
+    const vDesign = Math.max(vT2T, vProd);
+    const tphStrand = vDesign*kgPerM*60/1000;
+    const tCastHeat = castWtPerHeat*1000/(p.strands*vDesign*kgPerM);
+    const heatsCap  = opMinutes/(tCastHeat + p.changeoverMin/p.heatsPerSequence);
+    const gradeRows = input.grades.map(g => {
+      const solTime = Math.pow(D/(2*g.K), 2);
+      const vMet = allowableLm/solTime;
+      const vPerm = Math.min(vMet, s.maxSpeed*g.speedFactor);
+      const lm = vDesign*solTime;
+      return { grade:g.name, share:g.share, K:g.K, speedFactor:g.speedFactor, solTime, vMet, vPerm, lm, ok: vDesign <= vPerm };
+    });
+    const worst = gradeRows.reduce((a,b)=> b.lm > a.lm ? b : a);
+    const lmWeighted = gradeRows.reduce((a,r)=>a+r.share*r.lm,0)/(sumGr||1);
+    const minPerm = Math.min(...gradeRows.map(r=>r.vPerm));
+    const status = (vDesign <= minPerm && vDesign <= s.maxSpeed && worst.lm <= allowableLm) ? 'OK' : 'REVIEW';
+    return { name:s.name, shape:s.shape, share:s.share, width:s.width, thickness:thick, cutLength:s.cutLength, area, kgPerM, cutWeight, D,
+      annualProd: p.annualProduction*s.share, vT2T, vProd, vDesign, maxSpeed:s.maxSpeed, minPermSpeed:minPerm,
+      tphStrand, tphCaster: tphStrand*p.strands, piecesPerHrStrand: vDesign*60/s.cutLength, cutCycleSec: s.cutLength/vDesign*60,
+      tCastHeat, capacityIf100: Math.min(heatsCap, heatsPossible)*castWtPerHeat,
+      lmWeighted, lmWorst: worst.lm, governingGrade: worst.grade, lmUtilisation: worst.lm/allowableLm, gradeRows, status };
+  });
+  const wAvg = f => sections.reduce((a,s)=>a+s.share*f(s),0)/(sumSec||1);
+  const totals = { vDesign:wAvg(s=>s.vDesign), vT2T:wAvg(s=>s.vT2T), vProd:wAvg(s=>s.vProd), lmWeighted:wAvg(s=>s.lmWeighted),
+    lmWorst: Math.max(...sections.map(s=>s.lmWorst)), tphCaster:wAvg(s=>s.tphCaster),
+    annualProd: sections.reduce((a,s)=>a+s.annualProd,0), status: sections.every(s=>s.status==='OK') ? 'OK' : 'REVIEW' };
+  return { plant, sections, totals, warnings };
+}
+
+/* ===================== UI ===================== */
+const GROUPS = [
+ ['Production & heat', [
+   ['annualProduction','Annual cast production','t/yr',1,'Billets / blooms required per year'],
+   ['heatSize','Heat size','t',1,'Liquid steel tapped per heat'],
+   ['tapToTap','Tap-to-tap time','min',1,'Converter / furnace cycle'],
+   ['strands','Number of strands','nos',1,'Strands in operation'],
+   ['yield','Caster yield','%',100,'Cast steel / liquid steel']]],
+ ['Time & sequence', [
+   ['operatingDays','Operating days per year','days',1,'After planned shutdowns'],
+   ['availability','Time availability','%',100,'After unplanned delays'],
+   ['heatsPerSequence','Heats per sequence','heats',1,'Average sequence length'],
+   ['changeoverMin','Sequence changeover','min',1,'Tundish change and restart']]],
+ ['Machine & material', [
+   ['density','Steel density','kg/m3',1,'7850 for cold size'],
+   ['machineLength','Machine metallurgical length','m',1,'Meniscus to torch / unbending'],
+   ['allowablePct','Allowable length','% of machine',100,'Safety margin for crater end']]]
+];
+const PLANT_FIELDS = GROUPS.flatMap(g=>g[1]);
+const PALETTE = ['#2563eb','#ff6a1a','#16a34a','#a855f7','#0ea5e9','#e11d48','#ca8a04','#64748b'];
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = (x,d=2) => Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const $ = id => document.getElementById(id);
+let last = null, timer = null;
+
+function buildPlant(p){
+  $('plantCards').innerHTML = GROUPS.map(([title,fs]) => `<div class="card"><h3>${title}</h3><div class="fields">` +
+    fs.map(([k,l,u,m,h]) => `<label class="f">${l} (${u})<input type="number" step="any" id="p_${k}" value="${+(p[k]*m).toFixed(6)}"><i>${h}</i></label>`).join('') + '</div></div>').join('');
+}
+function secRow(s){
+  return `<tr><td><input value="${esc(s.name)}"></td>
+  <td><select>${['Square','Rectangular','Round'].map(o=>`<option${o===s.shape?' selected':''}>${o}</option>`).join('')}</select></td>
+  <td><input type="number" step="any" value="${s.width}"></td><td><input type="number" step="any" value="${s.thickness||0}"></td>
+  <td><input type="number" step="any" value="${s.cutLength}"></td><td><input type="number" step="any" value="${s.maxSpeed}"></td>
+  <td><input type="number" step="any" value="${+(s.share*100).toFixed(4)}"></td>
+  <td><button class="xbtn" title="Remove" onclick="this.closest('tr').remove();schedule()">x</button></td></tr>`;
+}
+function grRow(g){
+  return `<tr><td><input value="${esc(g.name)}"></td><td><input type="number" step="any" value="${+(g.share*100).toFixed(4)}"></td>
+  <td><input type="number" step="any" value="${g.K}"></td><td><input type="number" step="any" value="${+(g.speedFactor*100).toFixed(4)}"></td>
+  <td><button class="xbtn" title="Remove" onclick="this.closest('tr').remove();schedule()">x</button></td></tr>`;
+}
+function buildTables(d){
+  $('secTable').innerHTML = '<tr><th class="l">Section</th><th>Shape</th><th>Width / Dia (mm)</th><th>Thickness (mm)</th><th>Cutting length (m)</th><th>Max speed (m/min)</th><th>Share (%)</th><th></th></tr>' + d.sections.map(secRow).join('');
+  $('grTable').innerHTML = '<tr><th class="l">Grade</th><th>Share (%)</th><th>K</th><th>Speed factor (%)</th><th></th></tr>' + d.grades.map(grRow).join('');
+}
+function addSection(){ $('secTable').insertAdjacentHTML('beforeend', secRow({name:'New section',shape:'Square',width:150,thickness:0,cutLength:12,maxSpeed:2.5,share:0})); schedule(); }
+function addGrade(){ $('grTable').insertAdjacentHTML('beforeend', grRow({name:'New grade',share:0,K:25,speedFactor:1})); schedule(); }
+
+function collect(){
+  const plant = {};
+  PLANT_FIELDS.forEach(([k,,,m]) => plant[k] = num($('p_'+k).value)/m);
+  const sections = [...document.querySelectorAll('#secTable tr')].slice(1).map(tr => { const i = tr.querySelectorAll('input,select');
+    return { name:i[0].value||'Section', shape:i[1].value, width:num(i[2].value), thickness:num(i[3].value), cutLength:num(i[4].value), maxSpeed:num(i[5].value), share:num(i[6].value)/100 }; });
+  const grades = [...document.querySelectorAll('#grTable tr')].slice(1).map(tr => { const i = tr.querySelectorAll('input');
+    return { name:i[0].value||'Grade', share:num(i[1].value)/100, K:num(i[2].value), speedFactor:num(i[3].value)/100 }; });
+  return { plant, sections, grades };
+}
+function validate(d){
+  const e = [], p = d.plant;
+  ['annualProduction','heatSize','tapToTap','strands','yield','operatingDays','availability','heatsPerSequence','density','machineLength','allowablePct']
+    .forEach(k => { if (!(p[k] > 0)) e.push('Plant input "' + k + '" must be greater than zero.'); });
+  if (p.yield > 1) e.push('Caster yield cannot exceed 100%.');
+  if (p.availability > 1) e.push('Time availability cannot exceed 100%.');
+  if (!d.sections.length) e.push('Add at least one section.');
+  if (!d.grades.length) e.push('Add at least one grade.');
+  d.sections.forEach(s => {
+    if (!(s.width>0)) e.push(s.name + ': width / diameter must be greater than zero.');
+    if (s.shape==='Rectangular' && !(s.thickness>0)) e.push(s.name + ': enter a thickness for a rectangular section.');
+    if (!(s.cutLength>0)) e.push(s.name + ': cutting length must be greater than zero.');
+    if (!(s.maxSpeed>0)) e.push(s.name + ': max speed must be greater than zero.');
+  });
+  d.grades.forEach(g => { if (!(g.K>0)) e.push(g.name + ': K must be greater than zero.'); if (!(g.speedFactor>0)) e.push(g.name + ': speed factor must be greater than zero.'); });
+  return e;
+}
+function save(d){ try { localStorage.setItem('castcalc_v1', JSON.stringify(d)); } catch(e){} }
+function load(){
+  try {
+    const d = JSON.parse(localStorage.getItem('castcalc_v1'));
+    if (d && d.plant && Array.isArray(d.sections) && d.sections.length && Array.isArray(d.grades) && d.grades.length &&
+        PLANT_FIELDS.every(f => typeof d.plant[f[0]] === 'number')) return d;
+  } catch(e){}
+  return null;
+}
+function schedule(){ clearTimeout(timer); timer = setTimeout(()=>run(false), 250); }
+function resetExample(){
+  try { localStorage.removeItem('castcalc_v1'); } catch(e){}
+  buildPlant(EXAMPLE.plant); buildTables(EXAMPLE); run(false);
+}
+
+/* ---------- charts (inline SVG) ---------- */
+function chart(cats, series, line, lineLabel){
+  const W=620,H=270,L=46,R=12,T=16,B=36, iw=W-L-R, ih=H-T-B;
+  const maxV = (Math.max(...series.flatMap(s=>s.values), line||0) || 1) * 1.15;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  for (let i=0;i<=5;i++){ const y = T+ih-ih*i/5, v = maxV*i/5;
+    svg += `<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#e2e8f0"/><text x="${L-6}" y="${y+4}" font-size="11" fill="#64748b" text-anchor="end">${fmt(v,1)}</text>`; }
+  const gw = iw/cats.length, bw = Math.min(34, gw*0.78/series.length);
+  cats.forEach((c,ci) => {
+    series.forEach((s,si) => {
+      const h = ih*s.values[ci]/maxV, x = L+gw*ci+(gw-bw*series.length)/2+bw*si, y = T+ih-h;
+      svg += `<rect x="${x}" y="${y}" width="${bw-2}" height="${Math.max(h,0)}" rx="3" fill="${s.color}"><title>${esc(s.name)} - ${esc(c)}: ${fmt(s.values[ci])}</title></rect>`;
+      if (series.length <= 3) svg += `<text x="${x+(bw-2)/2}" y="${y-4}" font-size="10" fill="#334155" text-anchor="middle">${fmt(s.values[ci],2)}</text>`;
+    });
+    svg += `<text x="${L+gw*ci+gw/2}" y="${H-14}" font-size="11" fill="#334155" text-anchor="middle">${esc(c.length>16?c.slice(0,15)+'...':c)}</text>`;
+  });
+  if (line){ const y = T+ih-ih*line/maxV;
+    svg += `<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4"/><text x="${W-R}" y="${y-5}" font-size="11" fill="#dc2626" text-anchor="end" font-weight="700">${esc(lineLabel)}</text>`; }
+  svg += '</svg><div class="legend">' + series.map(s=>`<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('') + '</div>';
+  return svg;
+}
+
+/* ---------- main run ---------- */
+function run(scroll){
+  const d = collect(), errs = validate(d);
+  if (errs.length){
+    $('msgs').innerHTML = '<div class="alert err"><b>Please fix these inputs:</b><br>' + errs.map(esc).join('<br>') + '</div>';
+    ['kpis','secResults','chart1','chart2','matrix','workedOut'].forEach(id=>$(id).innerHTML='');
+    $('hs_speed').textContent='-'; $('hs_lm').textContent='-'; $('hs_status').innerHTML='<span class="pill na">-</span>';
+    last = null; return;
+  }
+  save(d);
+  const r = calculate(d), P = r.plant, T = r.totals;
+  last = { d, r };
+  $('secTotal').textContent = fmt(d.sections.reduce((a,s)=>a+s.share,0)*100,1)+'%';
+  $('grTotal').textContent  = fmt(d.grades.reduce((a,g)=>a+g.share,0)*100,1)+'%';
+  $('msgs').innerHTML = r.warnings.length ? '<div class="alert warn">' + r.warnings.map(esc).join('<br>') + '</div>' : '';
+
+  $('hs_speed').textContent = fmt(T.vDesign); $('hs_lm').textContent = fmt(T.lmWorst);
+  $('hs_status').innerHTML = `<span class="pill ${T.status==='OK'?'ok':'bad'}">${T.status}</span>`;
+
+  $('kpis').innerHTML = [
+    [fmt(P.heatsPerYear,0),'Heats required per year'], [fmt(P.heatsPerDay,1),'Heats per operating day'],
+    [fmt(P.t2tUtilisation*100,1)+'%','Tap-to-tap utilisation'], [fmt(P.tCastMax)+' min','Max casting time per heat'],
+    [fmt(P.allowableLm)+' m','Allowable metallurgical length'], [fmt(T.vDesign),'Avg design speed (m/min)'],
+    [fmt(P.avgProdRate,1)+' t/h','Avg production over operating time'], [fmt(T.tphCaster,1)+' t/h','Avg caster throughput (running)']
+  ].map(k=>`<div class="kpi"><b>${k[0]}</b><span>${k[1]}</span></div>`).join('');
+
+  const rows = [
+    ['Section shape', s=>esc(s.shape)], ['Weight per metre (kg/m)', s=>fmt(s.kgPerM)], ['Cut piece weight (kg)', s=>fmt(s.cutWeight,0)],
+    ['Casting speed - tap-to-tap basis (m/min)', s=>fmt(s.vT2T), T.vT2T], ['Casting speed - annual production basis (m/min)', s=>fmt(s.vProd), T.vProd],
+    ['DESIGN CASTING SPEED (m/min)', s=>fmt(s.vDesign), T.vDesign, 'key'], ['Section max speed (m/min)', s=>fmt(s.maxSpeed)],
+    ['Lowest permissible speed over grades (m/min)', s=>fmt(s.minPermSpeed)],
+    ['Metallurgical length - weighted avg (m)', s=>fmt(s.lmWeighted), T.lmWeighted], ['Metallurgical length - worst grade (m)', s=>fmt(s.lmWorst), T.lmWorst, 'key'],
+    ['Governing grade', s=>esc(s.governingGrade)], ['Worst length as % of allowable', s=>fmt(s.lmUtilisation*100,1)+'%'],
+    ['Strand throughput (t/h)', s=>fmt(s.tphStrand)], ['Caster throughput (t/h)', s=>fmt(s.tphCaster), T.tphCaster],
+    ['Cut pieces per hour per strand', s=>fmt(s.piecesPerHrStrand,1)], ['Cutting cycle per piece (s)', s=>fmt(s.cutCycleSec,0)],
+    ['Casting time per heat at design speed (min)', s=>fmt(s.tCastHeat)], ['Annual production of section (t/yr)', s=>fmt(s.annualProd,0), T.annualProd],
+    ['Annual capacity if 100% on section (t/yr)', s=>fmt(s.capacityIf100,0)]
+  ];
+  let h = '<table><tr><th class="l">Parameter</th>' + r.sections.map(s=>`<th>${esc(s.name)}</th>`).join('') + '<th>Weighted / Total</th></tr>';
+  rows.forEach(([l,fn,tv,k]) => {
+    const t = (typeof tv === 'number') ? fmt(tv, l.includes('Annual') ? 0 : 2) : '';
+    h += `<tr class="${k||''}"><td class="l">${l}</td>` + r.sections.map(s=>`<td>${fn(s)}</td>`).join('') + `<td>${t}</td></tr>`; });
+  h += '<tr><td class="l"><b>STATUS</b></td>' + r.sections.map(s=>`<td class="${s.status==='OK'?'ok':'bad'}">${s.status}</td>`).join('') + `<td class="${T.status==='OK'?'ok':'bad'}">${T.status}</td></tr></table>`;
+  $('secResults').innerHTML = h;
+
+  const cats = r.sections.map(s=>s.name);
+  $('chart1').innerHTML = chart(cats, [
+    {name:'Design speed', color:'#ff6a1a', values:r.sections.map(s=>s.vDesign)},
+    {name:'Lowest permissible speed', color:'#2563eb', values:r.sections.map(s=>s.minPermSpeed)},
+    {name:'Section max speed', color:'#94a3b8', values:r.sections.map(s=>s.maxSpeed)} ]);
+  $('chart2').innerHTML = chart(cats, d.grades.map((g,gi)=>({name:g.name, color:PALETTE[gi%PALETTE.length], values:r.sections.map(s=>s.gradeRows[gi].lm)})),
+    P.allowableLm, 'Allowable ' + fmt(P.allowableLm) + ' m');
+
+  let m = '<table><tr><th class="l">Grade</th>' + r.sections.map(s=>`<th>${esc(s.name)}</th>`).join('') + '</tr>';
+  d.grades.forEach((g,gi) => { m += `<tr><td class="l">${esc(g.name)}</td>` + r.sections.map(s => { const x = s.gradeRows[gi];
+    return `<td class="${x.lm > P.allowableLm ? 'bad' : ''}">${fmt(x.lm)} m<br><small style="color:#64748b">v max ${fmt(x.vPerm)}</small></td>`; }).join('') + '</tr>'; });
+  $('matrix').innerHTML = m + '</table>';
+  $('matrixHint').textContent = 'Red = crater end exceeds the allowable ' + fmt(P.allowableLm) + ' m. "v max" is the permissible casting speed for that grade and section.';
+
+  const ws = $('wSec').selectedIndex, wg = $('wGr').selectedIndex;
+  $('wSec').innerHTML = r.sections.map((s,i)=>`<option value="${i}">${esc(s.name)}</option>`).join('');
+  $('wGr').innerHTML = d.grades.map((g,i)=>`<option value="${i}">${esc(g.name)}</option>`).join('');
+  $('wSec').selectedIndex = (ws >= 0 && ws < r.sections.length) ? ws : 0;
+  $('wGr').selectedIndex = (wg >= 0 && wg < d.grades.length) ? wg : 0;
+  renderWorked();
+  if (scroll) $('results').scrollIntoView({behavior:'smooth'});
+}
+
+function renderWorked(){
+  if (!last) return;
+  const { d, r } = last, p = d.plant, P = r.plant;
+  const si = Math.max(0,$('wSec').selectedIndex), gi = Math.max(0,$('wGr').selectedIndex);
+  const s = r.sections[si], g = d.grades[gi], gr = s.gradeRows[gi], ds = d.sections[si];
+  const thick = ds.shape==='Rectangular' ? ds.thickness : ds.width;
+  const S = [
+   ['Plant cycle', null],
+   ['Cast steel per heat','heat size x yield', `${fmt(p.heatSize,1)} x ${p.yield}`, fmt(P.castWtPerHeat)+' t'],
+   ['Liquid steel per year','annual production / yield', `${fmt(p.annualProduction,0)} / ${p.yield}`, fmt(P.liquidSteel,0)+' t'],
+   ['Heats per year','liquid steel / heat size', `${fmt(P.liquidSteel,0)} / ${fmt(p.heatSize,1)}`, fmt(P.heatsPerYear,0)],
+   ['Operating minutes per year','days x 1440 x availability', `${p.operatingDays} x 1440 x ${p.availability}`, fmt(P.opMinutes,0)+' min'],
+   ['Heats possible at tap-to-tap','operating min / tap-to-tap', `${fmt(P.opMinutes,0)} / ${p.tapToTap}`, fmt(P.heatsPossible,0)],
+   ['Tap-to-tap utilisation','heats needed / heats possible', `${fmt(P.heatsPerYear,0)} / ${fmt(P.heatsPossible,0)}`, fmt(P.t2tUtilisation*100,1)+'%'],
+   ['Sequences per year','heats / heats per sequence', `${fmt(P.heatsPerYear,0)} / ${p.heatsPerSequence}`, fmt(P.sequencesYr,1)],
+   ['Time available per sequence','operating min / sequences', `${fmt(P.opMinutes,0)} / ${fmt(P.sequencesYr,1)}`, fmt(P.timePerSeq)+' min'],
+   ['Casting time allowed per heat','(time per sequence - changeover) / heats per sequence', `(${fmt(P.timePerSeq)} - ${p.changeoverMin}) / ${p.heatsPerSequence}`, fmt(P.tCastMax)+' min'],
+   ['Allowable metallurgical length','machine length x allowable %', `${p.machineLength} x ${p.allowablePct}`, fmt(P.allowableLm)+' m'],
+   ['Section: ' + s.name, null],
+   ['Weight per metre','width x thickness / 10^6 x density', `${ds.width} x ${thick} / 10^6 x ${p.density}` + (ds.shape==='Round' ? '  (round: pi/4 x d^2)' : ''), fmt(s.kgPerM)+' kg/m'],
+   ['Speed A (tap-to-tap)','cast wt x 1000 / (strands x tap-to-tap x kg/m)', `${fmt(P.castWtPerHeat*1000,0)} / (${p.strands} x ${p.tapToTap} x ${fmt(s.kgPerM)})`, fmt(s.vT2T,3)+' m/min'],
+   ['Speed B (annual target)','cast wt x 1000 / (strands x casting time x kg/m)', `${fmt(P.castWtPerHeat*1000,0)} / (${p.strands} x ${fmt(Math.max(P.tCastMax,0.1))} x ${fmt(s.kgPerM)})`, fmt(s.vProd,3)+' m/min'],
+   ['DESIGN CASTING SPEED','higher of A and B', `max(${fmt(s.vT2T,3)}, ${fmt(s.vProd,3)})`, fmt(s.vDesign,3)+' m/min'],
+   ['Strand throughput','speed x kg/m x 60 / 1000', `${fmt(s.vDesign,3)} x ${fmt(s.kgPerM)} x 60 / 1000`, fmt(s.tphStrand)+' t/h'],
+   ['Cut pieces per hour per strand','speed x 60 / cutting length', `${fmt(s.vDesign,3)} x 60 / ${ds.cutLength}`, fmt(s.piecesPerHrStrand,1)],
+   ['Grade: ' + g.name + '  (K = ' + g.K + ')', null],
+   ['Solidification time','(D / 2K)^2', `(${s.D} / (2 x ${g.K}))^2`, fmt(gr.solTime,3)+' min'],
+   ['METALLURGICAL LENGTH','design speed x solidification time', `${fmt(s.vDesign,3)} x ${fmt(gr.solTime,3)}`, fmt(gr.lm)+' m'],
+   ['Max speed from allowable length','allowable length / solidification time', `${fmt(P.allowableLm)} / ${fmt(gr.solTime,3)}`, fmt(gr.vMet,3)+' m/min'],
+   ['Permissible speed','min(speed from length, section max x grade factor)', `min(${fmt(gr.vMet,3)}, ${ds.maxSpeed} x ${g.speedFactor})`, fmt(gr.vPerm,3)+' m/min'],
+   ['Check for this grade','design speed <= permissible speed', `${fmt(s.vDesign,3)} <= ${fmt(gr.vPerm,3)}`, gr.ok ? 'OK' : 'REVIEW']
+  ];
+  let h = '<table><tr><th class="l">Step</th><th class="l">Formula</th><th class="l">With your numbers</th><th>Result</th></tr>';
+  S.forEach(x => {
+    if (x[1] === null) h += `<tr><td colspan="4" class="l" style="background:#fff7ed;font-weight:800;color:#9a3412">${esc(x[0])}</td></tr>`;
+    else h += `<tr><td class="l">${esc(x[0])}</td><td class="l"><span class="fx">${esc(x[1])}</span></td><td class="l"><span class="fx">${esc(x[2])}</span></td>` +
+      `<td class="${x[3]==='OK'?'ok':x[3]==='REVIEW'?'bad':''}"><b>${esc(x[3])}</b></td></tr>`;
+  });
+  $('workedOut').innerHTML = h + '</table>';
+}
+
+function downloadCSV(){
+  if (!last) { alert('Fix the inputs first.'); return; }
+  const { d, r } = last, q = v => '"' + String(v).replace(/"/g,'""') + '"', rows = [];
+  rows.push(['Section results'].map(q).join(','));
+  rows.push(['Section','Shape','Width/Dia mm','Thickness mm','Cut length m','kg/m','Design speed m/min','Max speed m/min','Worst Lm m','Governing grade','Strand t/h','Annual t/yr','Status'].map(q).join(','));
+  r.sections.forEach(s => rows.push([s.name,s.shape,s.width,s.thickness,s.cutLength,s.kgPerM.toFixed(3),s.vDesign.toFixed(3),s.maxSpeed,s.lmWorst.toFixed(3),s.governingGrade,s.tphStrand.toFixed(3),Math.round(s.annualProd),s.status].map(q).join(',')));
+  rows.push(''); rows.push(['Metallurgical length m (grade x section)'].map(q).join(','));
+  rows.push(['Grade'].concat(r.sections.map(s=>s.name)).map(q).join(','));
+  d.grades.forEach((g,gi) => rows.push([g.name].concat(r.sections.map(s=>s.gradeRows[gi].lm.toFixed(3))).map(q).join(',')));
+  const blob = new Blob([rows.join('\r\n')], {type:'text/csv'}), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'caster-results.csv'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+document.addEventListener('input', e => { if (e.target.closest('#calculator')) schedule(); });
+document.addEventListener('change', e => { if (e.target.closest('#calculator')) schedule(); });
+(function init(){ const s = load() || EXAMPLE; buildPlant(s.plant); buildTables(s); run(false); })();
+</script>
+</body>
+</html>
